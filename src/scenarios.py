@@ -39,13 +39,14 @@ def _ar1_errors(n: int, rng: np.random.Generator, cfg: StudyConfig) -> np.ndarra
 
 def generate_dataset(
     scenario: str,
-    n: int,
+    x: np.ndarray,  # Recebe o X previamente gerado
     rng: np.random.Generator,
     cfg: StudyConfig,
     beta0: float,
     beta1: float,
 ) -> dict[str, np.ndarray]:
-    x = generate_x(n, rng, cfg)
+    
+    n = len(x) # Deriva o tamanho da amostra do próprio X
 
     if scenario == "classic_normal":
         eps = _normal_errors(n, rng, cfg.sigma)

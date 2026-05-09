@@ -33,7 +33,8 @@ def build_summary_rows(
     alpha: float,
     size_h0: float,
     power_h1: float,
-) -> list[dict[str, float | str | int]]:
+) -> list[dict[str, float | str | int | None]]:
+    
     b0 = summarize_parameter(frame["beta0_hat"].to_numpy(), true_beta0)
     b1 = summarize_parameter(frame["beta1_hat"].to_numpy(), true_beta1)
 
@@ -53,8 +54,8 @@ def build_summary_rows(
             "parameter": "beta0",
             **b0,
             "coverage": cov_b0,
-            "size_h0": size_h0,
-            "power_h1": power_h1,
+            "size_h0": None,  # Ajuste aqui
+            "power_h1": None, # Ajuste aqui
             "alpha": alpha,
         },
         {

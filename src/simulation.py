@@ -6,10 +6,10 @@ import numpy as np
 import pandas as pd
 
 from .config import SCENARIO_LABELS, StudyConfig
-from .diagnostics import save_boxplot, save_histogram, save_qqplot, save_residuals_vs_fitted
+from .diagnostics import save_boxplot, save_histogram, save_qqplot, save_residuals_vs_fitted, save_scatter_with_fit
 from .metrics import build_summary_rows, rejection_rate
 from .modeling import fit_ols
-from .scenarios import generate_dataset
+from .scenarios import generate_dataset, generate_x
 
 
 SCENARIOS = [
@@ -46,18 +46,23 @@ def _collect_replications(
     beta1_generation: float,
     model_label: str,
 ) -> tuple[pd.DataFrame, dict[str, np.ndarray]]:
+    
     rows = []
     diagnostic_sample: dict[str, np.ndarray] | None = None
+
+    # 1. GERA O X APENAS UMA VEZ AQUI (Fora do loop!)
+    x_fixed = generate_x(n, rng, cfg)
 
     for _ in range(cfg.replications):
         data = generate_dataset(
             scenario=scenario,
-            n=n,
+            x=x_fixed,  # 2. Passa o X fixo
             rng=rng,
             cfg=cfg,
             beta0=cfg.beta0,
             beta1=beta1_generation,
         )
+        
         fit = _fit_for_scenario(
             scenario=scenario,
             x=data["x"],
@@ -65,6 +70,7 @@ def _collect_replications(
             alpha=cfg.alpha,
             model_label=model_label,
         )
+
         rows.append(
             {
                 "beta0_hat": fit["beta0_hat"],
@@ -76,8 +82,11 @@ def _collect_replications(
                 "pvalue_beta1": fit["pvalue_beta1"],
             }
         )
+
         if diagnostic_sample is None:
             diagnostic_sample = {
+                "x": data["x"], # 3. Vamos salvar X e Y aqui para usar no gráfico de dispersão!
+                "y": data["y"],
                 "fitted": np.asarray(fit["fitted"]),
                 "resid": np.asarray(fit["resid"]),
             }
@@ -151,29 +160,47 @@ def run_full_study(cfg: StudyConfig, root_dir: Path) -> tuple[pd.DataFrame, pd.D
                 aux["model"] = model_label
                 all_estimation_rows.extend(aux.to_dict(orient="records"))
 
-                if n == representative_n:
-                    slug = f"{SCENARIO_LABELS[scenario]}_n{n}_{model_label}"
-                    save_residuals_vs_fitted(
-                        diagnostic["fitted"],
-                        diagnostic["resid"],
-                        figures_dir / f"{slug}_residuos_vs_ajustados.png",
-                        f"Residuos vs ajustados - {SCENARIO_LABELS[scenario]} - {model_label}",
-                    )
-                    save_qqplot(
-                        diagnostic["resid"],
-                        figures_dir / f"{slug}_qqplot_residuos.png",
-                        f"QQ-plot residuos - {SCENARIO_LABELS[scenario]} - {model_label}",
-                    )
-                    save_histogram(
-                        alt_frame["beta1_hat"].to_numpy(),
-                        figures_dir / f"{slug}_hist_beta1.png",
-                        f"Histograma beta1 - {SCENARIO_LABELS[scenario]} - {model_label}",
-                    )
-                    save_boxplot(
-                        alt_frame["beta1_hat"].to_numpy(),
-                        figures_dir / f"{slug}_boxplot_beta1.png",
-                        f"Boxplot beta1 - {SCENARIO_LABELS[scenario]} - {model_label}",
-                    )
+                #if n == representative_n:
+                slug = f"{SCENARIO_LABELS[scenario]}_n{n}_{model_label}"
+                save_scatter_with_fit(
+                    diagnostic["x"],
+                    diagnostic["y"],
+                    diagnostic["fitted"],
+                    figures_dir / f"{slug}_scatter_fit.png",
+                    f"Ajuste - {SCENARIO_LABELS[scenario]} - {model_label}"
+                )
+                save_residuals_vs_fitted(
+                    diagnostic["fitted"],
+                    diagnostic["resid"],
+                    figures_dir / f"{slug}_residuos_vs_ajustados.png",
+                    f"Residuos vs ajustados - {SCENARIO_LABELS[scenario]} - {model_label}",
+                )
+                save_qqplot(
+                    diagnostic["resid"],
+                    figures_dir / f"{slug}_qqplot_residuos.png",
+                    f"QQ-plot residuos - {SCENARIO_LABELS[scenario]} - {model_label}",
+                )
+                save_histogram(
+                    alt_frame["beta1_hat"].to_numpy(),
+                    figures_dir / f"{slug}_hist_beta1.png",
+                    f"Histograma beta1 - {SCENARIO_LABELS[scenario]} - {model_label}",
+                )
+                save_boxplot(
+                    alt_frame["beta1_hat"].to_numpy(),
+                    figures_dir / f"{slug}_boxplot_beta1.png",
+                    f"Boxplot beta1 - {SCENARIO_LABELS[scenario]} - {model_label}",
+                )
+                # ADICIONE AQUI OS GRÁFICOS DO BETA 0
+                save_histogram(
+                    alt_frame["beta0_hat"].to_numpy(),
+                    figures_dir / f"{slug}_hist_beta0.png",
+                    f"Histograma beta0 - {SCENARIO_LABELS[scenario]} - {model_label}",
+                )
+                save_boxplot(
+                    alt_frame["beta0_hat"].to_numpy(),
+                    figures_dir / f"{slug}_boxplot_beta0.png",
+                    f"Boxplot beta0 - {SCENARIO_LABELS[scenario]} - {model_label}",
+                )
 
     summary_df = pd.DataFrame(summary_rows).sort_values(
         by=["scenario", "n", "model", "parameter"]

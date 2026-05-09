@@ -1,3 +1,0 @@
-n,hipótese,β₁_verdadeiro,taxa_rejeição (poder),interpretação
-30,H₁: β₁ ≠ 0,0.2,0.867,Proporção de vezes que rejeitamos H₀ quando H₁ é verdadeira
-100,H₁: β₁ ≠ 0,0.2,1.0,Proporção de vezes que rejeitamos H₀ quando H₁ é verdadeira

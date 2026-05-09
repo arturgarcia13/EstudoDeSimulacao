@@ -53,3 +53,25 @@ def save_boxplot(values: np.ndarray, output_file: Path, title: str) -> None:
     plt.savefig(output_file, dpi=150)
     plt.close()
 
+def save_scatter_with_fit(
+    x: np.ndarray, 
+    y: np.ndarray, 
+    fitted: np.ndarray, 
+    output_file: Path, 
+    title: str
+) -> None:
+    plt.figure(figsize=(7, 4))
+    plt.scatter(x, y, alpha=0.5, label="Dados")
+    
+    # Ordenar X para que a reta de regressão seja desenhada corretamente
+    sort_idx = np.argsort(x)
+    plt.plot(x[sort_idx], fitted[sort_idx], color="red", linewidth=2, label="Ajuste MRLS")
+    
+    plt.title(title)
+    plt.xlabel("X")
+    plt.ylabel("Y")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(output_file, dpi=150)
+    plt.close()
+

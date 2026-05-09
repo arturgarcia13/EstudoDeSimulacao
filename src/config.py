@@ -12,8 +12,8 @@ class StudyConfig:
     beta1: float = 2.0
     sigma: float = 1.0
 
-    x_low: float = -2.0
-    x_high: float = 2.0
+    x_low: float = 0.0
+    x_high: float = 10.0
 
     t_df: int = 3
     gamma_shape: float = 2.0
